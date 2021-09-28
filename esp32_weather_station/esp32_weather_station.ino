@@ -29,7 +29,7 @@ const char* ssid = "Redmi";
 const char* password = "Nicola123";
 
 // MQTT
-const char* mqttServer = "192.168.213.248";
+const char* mqttServer = "192.168.252.248";
 const int mqttPort = 1883;
 const char* mqttUser = "nico";
 const char* mqttPassword = "psw";
@@ -46,7 +46,7 @@ float MIN_HUM = 40.0;
 float MAX_HUM = 60.0;
 
 String ID = "ID1";
-String gps_coord = "41 53 25.36, 12 29 32.70";
+String gps_coord = "41 53 25.36 - 12 29 32.70";
 
 
 //#####################################################################
