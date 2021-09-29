@@ -14,16 +14,18 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 from keras.callbacks import EarlyStopping
 
+from pickle import dump
+
 
 file_name = "data/data.csv"
 df = pd.read_csv(file_name, encoding='UTF-16 LE')
 df['index'] = df.index
 print("Number of rows and columns:", df.shape)
-TRAINING_SIZE = 8000
+TRAINING_SIZE = 18000
 TEST_SIZE = 2000
 
-FORECASTING_WINDOW = 10
-PAST_WINDOW = 20
+FORECASTING_WINDOW = 30
+PAST_WINDOW = 60
 
 #MODEL TEMPERATURE
 
@@ -33,6 +35,7 @@ test_set_temp = df.iloc[TRAINING_SIZE:TRAINING_SIZE+TEST_SIZE, 6:7].values
 # Feature Scaling
 sc_t = MinMaxScaler(feature_range = (0, 1))
 training_set_scaled_temp = sc_t.fit_transform(training_set_temp)
+dump(sc_t, open('res/scaler_t.pkl', 'wb'))
 #training_set_scaled = training_set
 
 # Creating a data structure with 60 time-steps and 1 output
@@ -76,7 +79,7 @@ model_temp.add(Dropout(0.2))
 model_temp.add(LSTM(units = 50))
 model_temp.add(Dropout(0.2))
 # Adding the output layer
-model_temp.add(Dense(units = 10))
+model_temp.add(Dense(units = FORECASTING_WINDOW))
 
 # Compiling the RNN
 model_temp.compile(optimizer = 'adam', loss = 'mean_squared_error')
@@ -84,11 +87,11 @@ model_temp.compile(optimizer = 'adam', loss = 'mean_squared_error')
 # Fitting the RNN to the Training set
 model_temp.fit(X_train_temp, y_train_temp, epochs = 10, batch_size = 32, validation_data = (X_test_temp, y_test_temp))
 
-model_temp.save_weights("weights_temp.h5")
+model_temp.save_weights("res/weights_temp.h5")
 
 # Getting the predicted stock price of 2017
-dataset_train_temp = df.iloc[:len(training_set_temp), 6:7]
-dataset_test_temp = df.iloc[len(training_set_temp):, 6:7]
+dataset_train_temp = df.iloc[:TRAINING_SIZE, 6:7]
+dataset_test_temp = df.iloc[TRAINING_SIZE:TRAINING_SIZE+TEST_SIZE, 6:7]
 
 dataset_total_temp = pd.concat((dataset_train_temp, dataset_test_temp), axis = 0)
 
@@ -122,6 +125,7 @@ test_set_hum = df.iloc[TRAINING_SIZE:TRAINING_SIZE+TEST_SIZE, 3:4].values
 # Feature Scaling
 sc_h = MinMaxScaler(feature_range = (0, 1))
 training_set_scaled_hum = sc_h.fit_transform(training_set_hum)
+dump(sc_h, open('res/scaler_h.pkl', 'wb'))
 #training_set_scaled = training_set
 
 # Creating a data structure with 60 time-steps and 1 output
@@ -164,7 +168,7 @@ model_hum.add(Dropout(0.2))
 model_hum.add(LSTM(units = 50))
 model_hum.add(Dropout(0.2))
 # Adding the output layer
-model_hum.add(Dense(units = 10))
+model_hum.add(Dense(units = FORECASTING_WINDOW))
 
 # Compiling the RNN
 model_hum.compile(optimizer = 'adam', loss = 'mean_squared_error')
@@ -172,11 +176,11 @@ model_hum.compile(optimizer = 'adam', loss = 'mean_squared_error')
 # Fitting the RNN to the Training set
 model_hum.fit(X_train_hum, y_train_hum, epochs = 10, batch_size = 32, validation_data = (X_test_hum, y_test_hum))
 
-model_hum.save_weights("weights_hum.h5")
+model_hum.save_weights("res/weights_hum.h5")
 
 # Getting the predicted stock price of 2017
-dataset_train_hum = df.iloc[:len(training_set_hum), 3:4]
-dataset_test_hum = df.iloc[len(training_set_hum):, 3:4]
+dataset_train_hum = df.iloc[:TRAINING_SIZE, 3:4]
+dataset_test_hum = df.iloc[TRAINING_SIZE:TRAINING_SIZE+TEST_SIZE, 3:4]
 
 dataset_total_hum = pd.concat((dataset_train_hum, dataset_test_hum), axis = 0)
 
@@ -205,7 +209,7 @@ print("#################################")
 # Visualising the results
 plt.figure(figsize=(12,4))
 plt.plot(dataset_test_temp.values, color = "red", label = "Real weather")
-plt.plot(predicted_temp[:,0], color = "blue", label = "Predicted weather")
+plt.plot(predicted_temp[:,29], color = "blue", label = "Predicted weather")
 plt.xticks(np.arange(0,len(test_set_temp),100))
 plt.title('Weather Prediction')
 plt.xlabel('Time')
@@ -216,7 +220,7 @@ plt.show()
 # Visualising the results
 plt.figure(figsize=(12,4))
 plt.plot(dataset_test_hum.values, color = "red", label = "Real weather")
-plt.plot(predicted_hum[:,0], color = "blue", label = "Predicted weather")
+plt.plot(predicted_hum[:,29], color = "blue", label = "Predicted weather")
 plt.xticks(np.arange(0,len(test_set_hum),100))
 plt.title('Weather Prediction')
 plt.xlabel('Time')

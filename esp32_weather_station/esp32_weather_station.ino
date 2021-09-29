@@ -29,7 +29,7 @@ const char* ssid = "Redmi";
 const char* password = "Nicola123";
 
 // MQTT
-const char* mqttServer = "192.168.252.248";
+const char* mqttServer = "192.168.108.248";
 const int mqttPort = 1883;
 const char* mqttUser = "nico";
 const char* mqttPassword = "psw";
@@ -60,6 +60,7 @@ PubSubClient client(wifiClient);
 //#####################################################################
 
 void callback(char* topic, byte* payload, unsigned int length) {
+  long startTime=millis();
   Serial.println("############## SONO DENTRO ##############"); 
   char buff[length];
   int i;
@@ -69,32 +70,44 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   buff[i] = '\0';
   const char *p_payload = buff;
-  
-  float got_float = atof(p_payload);
     
   if ( String(topic) == "min_temp" ) {
+    float got_float = atof(p_payload);
     MIN_TEMP = got_float;
     Serial.print("MIN_TEMP changed: ");
     Serial.println(MIN_TEMP);   
   }
   
   if ( String(topic) == "max_temp" ) {
-  MAX_TEMP = got_float;
-  Serial.print("MAX_TEMP changed: ");
-  Serial.println(MAX_TEMP);   
+    float got_float = atof(p_payload);
+    MAX_TEMP = got_float;
+    Serial.print("MAX_TEMP changed: ");
+    Serial.println(MAX_TEMP);   
   }
   
   if ( String(topic) == "min_hum" ) {
-  MIN_HUM = got_float;
-  Serial.print("MIN_HUM changed: ");
-  Serial.println(MIN_HUM);   
+    float got_float = atof(p_payload);
+    MIN_HUM = got_float;
+    Serial.print("MIN_HUM changed: ");
+    Serial.println(MIN_HUM);   
   }
   
   if ( String(topic) == "max_hum" ) {
-  MAX_HUM = got_float;
-  Serial.print("MAX_HUM changed: ");
-  Serial.println(MAX_HUM);   
+    float got_float = atof(p_payload);
+    MAX_HUM = got_float;
+    Serial.print("MAX_HUM changed: ");
+    Serial.println(MAX_HUM);   
   }
+
+  if ( String(topic) == "freq" ) {
+    int got_int = atoi(p_payload);
+    SAMPLE_FREQ = got_int;
+    Serial.print("SAMPLE_FREQ changed: ");
+    Serial.println(SAMPLE_FREQ);   
+  }
+  long deltaTime=millis() - startTime;
+  Serial.println("TEMPO DI RICEVIMENTO: ");
+  Serial.println(deltaTime);
 }
 
 // Custom function to connect to the MQTT broker via WiFi
@@ -130,6 +143,7 @@ void connect_MQTT(){
   client.subscribe("max_temp");
   client.subscribe("min_hum");
   client.subscribe("max_hum");
+  client.subscribe("freq");
 }
 
 //#####################################################################
@@ -203,6 +217,8 @@ void loop(){
     Serial.println(MIN_HUM); 
     Serial.print("MAX_HUM ATTUALE: ");
     Serial.println(MAX_HUM);
+    Serial.print("SAMPLE_FREQ ATTUALE: ");
+    Serial.println(SAMPLE_FREQ);
 
   if ( t < MIN_TEMP || t > MAX_TEMP || h < MIN_HUM || h > MAX_HUM ){
     if ( t < MIN_TEMP || t > MAX_TEMP){

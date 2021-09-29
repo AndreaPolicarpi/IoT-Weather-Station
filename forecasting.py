@@ -21,10 +21,14 @@ from keras.callbacks import EarlyStopping
 from time import sleep
 import time
 
-INFLUXDB_ADDRESS = "192.168.252.248"
+from pickle import load 
+
+INFLUXDB_ADDRESS = "192.168.108.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
+
+FORECASTING_WINDOW = 30
 
 influxdb_client = InfluxDBClient(
     INFLUXDB_ADDRESS, 8086, INFLUXDB_USER, INFLUXDB_PASSWORD, None)
@@ -54,12 +58,12 @@ model_temp.add(Dropout(0.2))
 model_temp.add(LSTM(units=50))
 model_temp.add(Dropout(0.2))
 # Adding the output layer
-model_temp.add(Dense(units=10))
+model_temp.add(Dense(units=FORECASTING_WINDOW))
 
 # Compiling the RNN
 model_temp.compile(optimizer='adam', loss='mean_squared_error')
 
-model_temp.load_weights("weights_temp.h5")
+model_temp.load_weights("res/weights_temp.h5")
 
 
 model_hum = Sequential()
@@ -77,12 +81,12 @@ model_hum.add(Dropout(0.2))
 model_hum.add(LSTM(units=50))
 model_hum.add(Dropout(0.2))
 # Adding the output layer
-model_hum.add(Dense(units=10))
+model_hum.add(Dense(units=FORECASTING_WINDOW))
 
 # Compiling the RNN
 model_hum.compile(optimizer='adam', loss='mean_squared_error')
 
-model_hum.load_weights("weights_hum.h5")
+model_hum.load_weights("res/weights_hum.h5")
 
 while True:
     start_time = time.time()
@@ -104,8 +108,9 @@ while True:
 
     df = df.sort_values("time", ascending=True, ignore_index=True)
 
-    sc_t = MinMaxScaler(feature_range = (0, 1))
-    sc_h = MinMaxScaler(feature_range = (0, 1))
+
+    sc_t =  load(open("res/scaler_t.pkl", "rb"))
+    sc_h =  load(open("res/scaler_h.pkl", "rb"))
     scaled_temp = sc_t.fit_transform(df.iloc[:, 2:3].values)
     scaled_hum = sc_h.fit_transform(df.iloc[:, 3:4].values)
 
@@ -121,60 +126,98 @@ while True:
 
 
     import datetime as dt
-    t1 = dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ')
-    time_change = dt.timedelta(seconds=10)
-    t = t1+ time_change
-    print(df.iloc[-1,0])
-    print(t)
-    print("##################################")
-    print("##################################")
+    try:
+        t = dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ')
+    except ValueError:
+        t = dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%SZ')
 
-    json_temp = [
+    json_temp_10s = [
             {
-                "measurement": "predicted_temp",
-                "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=10),
+                "measurement": "predicted_temp_10s",
+                "time": t + dt.timedelta(seconds=10),
                 'tags': {
                     'id': df["id"][0],
                 },
                 'fields': {
-                    'temperature_+1': float(predict_temp[0][0]),
-                    'temperature_+2': float(predict_temp[0][1]),
-                    'temperature_+3': float(predict_temp[0][2]),
-                    'temperature_+4': float(predict_temp[0][3]),
-                    'temperature_+5': float(predict_temp[0][4]),
-                    'temperature_+6': float(predict_temp[0][5]),
-                    'temperature_+7': float(predict_temp[0][6]),
-                    'temperature_+8': float(predict_temp[0][7]),
-                    'temperature_+9': float(predict_temp[0][8]),
-                    'temperature_+10': float(predict_temp[0][9]),
+                    'temperature': float(predict_temp[0][9]),
                 }
             }
     ]
 
-    json_hum = [
-            {
-                "measurement": "predicted_hum",
-                "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=10),
-                'tags': {
-                    'id': df["id"][0],
-                },
-                'fields': {
-                    'humidity_+1': float(predict_hum[0][0]),
-                    'humidity_+2': float(predict_hum[0][1]),
-                    'humidity_+3': float(predict_hum[0][2]),
-                    'humidity_+4': float(predict_hum[0][3]),
-                    'humidity_+5': float(predict_hum[0][4]),
-                    'humidity_+6': float(predict_hum[0][5]),
-                    'humidity_+7': float(predict_hum[0][6]),
-                    'humidity_+8': float(predict_hum[0][7]),
-                    'humidity_+9': float(predict_hum[0][8]),
-                    'humidity_+10': float(predict_hum[0][9]),
-                }
+    json_temp_20s = [
+        {
+            "measurement": "predicted_temp_20s",
+            "time": t + dt.timedelta(seconds=20),
+            'tags': {
+                'id': df["id"][0],
+            },
+            'fields': {
+                'temperature': float(predict_temp[0][19]),
             }
+        }
     ]
 
-    influxdb_client.write_points(json_temp)
-    influxdb_client.write_points(json_hum)
+    json_temp_30s = [
+        {
+            "measurement": "predicted_temp_30s",
+            "time": t + dt.timedelta(seconds=30),
+            'tags': {
+                'id': df["id"][0],
+            },
+            'fields': {
+                'temperature': float(predict_temp[0][29]),
+            }
+        }
+    ]
+
+
+    json_hum_10s = [
+        {
+            "measurement": "predicted_hum_10s",
+            "time": t + dt.timedelta(seconds=10),
+            'tags': {
+                'id': df["id"][0],
+            },
+            'fields': {
+                'humidity': float(predict_hum[0][9]),
+            }
+        }
+    ]
+
+    json_hum_20s = [
+        {
+            "measurement": "predicted_hum_20s",
+            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=20),
+            'tags': {
+                'id': df["id"][0],
+            },
+            'fields': {
+                'humidity': float(predict_hum[0][19]),
+            }
+        }
+    ]
+
+    json_hum_30s = [
+        {
+            "measurement": "predicted_hum_30s",
+            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=30),
+            'tags': {
+                'id': df["id"][0],
+            },
+            'fields': {
+                'humidity': float(predict_hum[0][29]),
+            }
+        }
+    ]
+
+
+
+    influxdb_client.write_points(json_temp_10s)
+    influxdb_client.write_points(json_temp_20s)
+    influxdb_client.write_points(json_temp_30s)
+    influxdb_client.write_points(json_hum_10s)
+    influxdb_client.write_points(json_hum_20s)
+    influxdb_client.write_points(json_hum_30s)
 
 
     end_time = time.time()
