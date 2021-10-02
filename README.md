@@ -11,3 +11,5 @@ Proof-of-concept of an IoT weather station pipeline. The system is composed of:
 4) Data analytics, in charge of forecasting temperature and humidity by a LSTM, based on previous observations;
 
 5) Reinforcement learning application, which aims to self-adjust the sampling rate of the sensors on the base of the measurements quality.
+
+Authors: Nicola Amoriello, Andrea Policarpi
