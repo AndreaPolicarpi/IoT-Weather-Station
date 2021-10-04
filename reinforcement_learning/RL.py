@@ -12,12 +12,12 @@ df = pd.read_csv(file_name, encoding='UTF-16 LE')
 df['index'] = df.index
 print("Number of rows and columns:", df.shape)
 
-INFLUXDB_ADDRESS = "192.168.108.248"
+INFLUXDB_ADDRESS = "192.168.1.71"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
-MQTT_ADDRESS = '192.168.108.248'
+MQTT_ADDRESS = "192.168.1.71"
 MQTT_USER = 'nico'
 MQTT_PASSWORD = 'psw'
 MQTT_CLIENT_ID = "client"
@@ -157,7 +157,9 @@ Qtable = pd.DataFrame(data=0, index=states, columns=actions)
 
 state = '[0,{}]'.format(INIT_FREQ)
 
-for i in range(10):
+EPOCHS = 10000
+
+for i in range(EPOCHS):
 
     values = influxdb_client.query("SELECT time, id, temperature, humidity FROM quanto ORDER BY desc LIMIT 2")
 
@@ -181,7 +183,7 @@ for i in range(10):
 
     state = update_state_based_on_quality(state, quality)
 
-    chosen_action = epsilon_greedy_action(Qtable, state)
+    chosen_action = epsilon_greedy_action(Qtable, state, epsilon=0.2)
 
     new_state = state_transition(state, chosen_action)
 
@@ -189,8 +191,9 @@ for i in range(10):
 
     state = new_state
 
-    print(state)
+    print("TRAINING PHASE [{}/{}]: ".format(i, EPOCHS), state)
     mqtt_client.publish("freq", ast.literal_eval(state)[1])
+    sleep(ast.literal_eval(state)[1]/1000)
 
 while(True):
 
@@ -220,5 +223,6 @@ while(True):
 
     state = state_transition(state, chosen_action)
 
-    print(state)
+    print("RUNNING STATE: ", state)
     mqtt_client.publish("freq", ast.literal_eval(state)[1])
+    sleep(ast.literal_eval(state)[1]/1000)

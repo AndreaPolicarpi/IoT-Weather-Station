@@ -5,12 +5,12 @@ import json
 import paho.mqtt.client as mqtt
 from influxdb import InfluxDBClient
 
-INFLUXDB_ADDRESS = '192.168.108.248'
+INFLUXDB_ADDRESS = "192.168.1.71"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
-MQTT_ADDRESS = '192.168.108.248'
+MQTT_ADDRESS = "192.168.1.71"
 MQTT_USER = 'nico'
 MQTT_PASSWORD = 'psw'
 
