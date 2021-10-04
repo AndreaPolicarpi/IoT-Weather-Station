@@ -23,12 +23,14 @@ import time
 
 from pickle import load 
 
-INFLUXDB_ADDRESS = "192.168.108.248"
+INFLUXDB_ADDRESS = "192.168.1.71"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
 FORECASTING_WINDOW = 30
+
+ID_SENSOR = 'ID1'
 
 influxdb_client = InfluxDBClient(
     INFLUXDB_ADDRESS, 8086, INFLUXDB_USER, INFLUXDB_PASSWORD, None)
@@ -44,22 +46,17 @@ def _init_influxdb_database():
 _init_influxdb_database()
 
 model_temp = Sequential()
-# Adding the first LSTM layer and some Dropout regularisation
-model_temp.add(LSTM(units=50, return_sequences=True,
-          input_shape=(50, 1)))
+#Adding the first LSTM layer and some Dropout regularisation
+model_temp.add(LSTM(units = 64, return_sequences = True, input_shape=(60, 1)))
 model_temp.add(Dropout(0.2))
 # Adding a second LSTM layer and some Dropout regularisation
-model_temp.add(LSTM(units=50, return_sequences=True))
+model_temp.add(LSTM(units = 32, return_sequences = True))
 model_temp.add(Dropout(0.2))
 # Adding a third LSTM layer and some Dropout regularisation
-model_temp.add(LSTM(units=50, return_sequences=True))
-model_temp.add(Dropout(0.2))
-# Adding a fourth LSTM layer and some Dropout regularisation
-model_temp.add(LSTM(units=50))
+model_temp.add(LSTM(units = 32))
 model_temp.add(Dropout(0.2))
 # Adding the output layer
-model_temp.add(Dense(units=FORECASTING_WINDOW))
-
+model_temp.add(Dense(units = FORECASTING_WINDOW))
 # Compiling the RNN
 model_temp.compile(optimizer='adam', loss='mean_squared_error')
 
@@ -67,22 +64,17 @@ model_temp.load_weights("res/weights_temp.h5")
 
 
 model_hum = Sequential()
-# Adding the first LSTM layer and some Dropout regularisation
-model_hum.add(LSTM(units=50, return_sequences=True,
-          input_shape=(50, 1)))
+#Adding the first LSTM layer and some Dropout regularisation
+model_hum.add(LSTM(units = 64, return_sequences = True, input_shape=(60, 1)))
 model_hum.add(Dropout(0.2))
 # Adding a second LSTM layer and some Dropout regularisation
-model_hum.add(LSTM(units=50, return_sequences=True))
+model_hum.add(LSTM(units = 32, return_sequences = True))
 model_hum.add(Dropout(0.2))
 # Adding a third LSTM layer and some Dropout regularisation
-model_hum.add(LSTM(units=50, return_sequences=True))
-model_hum.add(Dropout(0.2))
-# Adding a fourth LSTM layer and some Dropout regularisation
-model_hum.add(LSTM(units=50))
+model_hum.add(LSTM(units = 32))
 model_hum.add(Dropout(0.2))
 # Adding the output layer
-model_hum.add(Dense(units=FORECASTING_WINDOW))
-
+model_hum.add(Dense(units = FORECASTING_WINDOW))
 # Compiling the RNN
 model_hum.compile(optimizer='adam', loss='mean_squared_error')
 
@@ -91,9 +83,11 @@ model_hum.load_weights("res/weights_hum.h5")
 while True:
     start_time = time.time()
 
-    values = influxdb_client.query(
-    "SELECT time, id, temperature, humidity FROM quanto ORDER BY desc LIMIT 50")
+    #values = influxdb_client.query(
+    #"SELECT time, id, temperature, humidity FROM quanto ORDER BY desc LIMIT 50")
 
+    values = influxdb_client.query(
+    'SELECT MEAN("temperature"), MEAN("humidity") FROM "quanto" WHERE time >= now() - 70s AND "id" = \'{}\' GROUP BY time(1s)'.format(ID_SENSOR))
 
     # df = pd.DataFrame(columns=['time', 'id', 'temperature', 'humidity'])
 
@@ -103,16 +97,27 @@ while True:
     for point in points:
         list_values.append(point)
 
-    df = pd.DataFrame(list_values, columns=[
-                    'time', 'id', 'temperature', 'humidity'])
+    df = pd.DataFrame(list_values, columns=['time', 'mean', 'mean_1']
+        ).rename(columns={'mean': 'temperature', 'mean_1': 'humidity'}).fillna(method="bfill")
+
 
     df = df.sort_values("time", ascending=True, ignore_index=True)
 
+    #df['time'] = [pd.to_datetime(df.iloc[i, 0]) for i in range(len(df))]
+
+    """series_t = pd.Series(df['temperature'].values, index= pd.to_datetime(df['time'].values))
+    print(series_t)
+
+    upsampled = series_t.resample('s')
+    interpolated = upsampled.interpolate(method='spline', order=2)
+    #interpolated = upsampled.interpolate(method='linear')
+    print(interpolated)
+    exit()"""
 
     sc_t =  load(open("res/scaler_t.pkl", "rb"))
     sc_h =  load(open("res/scaler_h.pkl", "rb"))
-    scaled_temp = sc_t.fit_transform(df.iloc[:, 2:3].values)
-    scaled_hum = sc_h.fit_transform(df.iloc[:, 3:4].values)
+    scaled_temp = sc_t.fit_transform(df.iloc[:60, 1:2].values)
+    scaled_hum = sc_h.fit_transform(df.iloc[:60, 2:3].values)
 
     x_temp = np.array(scaled_temp)
     x_temp = np.reshape(x_temp, (x_temp.shape[0], x_temp.shape[1], 1))
@@ -136,7 +141,7 @@ while True:
                 "measurement": "predicted_temp_10s",
                 "time": t + dt.timedelta(seconds=10),
                 'tags': {
-                    'id': df["id"][0],
+                    'id': ID_SENSOR,
                 },
                 'fields': {
                     'temperature': float(predict_temp[0][9]),
@@ -149,7 +154,7 @@ while True:
             "measurement": "predicted_temp_20s",
             "time": t + dt.timedelta(seconds=20),
             'tags': {
-                'id': df["id"][0],
+                'id': ID_SENSOR,
             },
             'fields': {
                 'temperature': float(predict_temp[0][19]),
@@ -162,7 +167,7 @@ while True:
             "measurement": "predicted_temp_30s",
             "time": t + dt.timedelta(seconds=30),
             'tags': {
-                'id': df["id"][0],
+                'id': ID_SENSOR,
             },
             'fields': {
                 'temperature': float(predict_temp[0][29]),
@@ -176,7 +181,7 @@ while True:
             "measurement": "predicted_hum_10s",
             "time": t + dt.timedelta(seconds=10),
             'tags': {
-                'id': df["id"][0],
+                'id': ID_SENSOR,
             },
             'fields': {
                 'humidity': float(predict_hum[0][9]),
@@ -187,9 +192,9 @@ while True:
     json_hum_20s = [
         {
             "measurement": "predicted_hum_20s",
-            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=20),
+            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%SZ') + dt.timedelta(seconds=20),
             'tags': {
-                'id': df["id"][0],
+                'id': ID_SENSOR,
             },
             'fields': {
                 'humidity': float(predict_hum[0][19]),
@@ -200,9 +205,9 @@ while True:
     json_hum_30s = [
         {
             "measurement": "predicted_hum_30s",
-            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%S.%fZ') + dt.timedelta(seconds=30),
+            "time": dt.datetime.strptime(df.iloc[-1,0], '%Y-%m-%dT%H:%M:%SZ') + dt.timedelta(seconds=30),
             'tags': {
-                'id': df["id"][0],
+                'id': ID_SENSOR,
             },
             'fields': {
                 'humidity': float(predict_hum[0][29]),
