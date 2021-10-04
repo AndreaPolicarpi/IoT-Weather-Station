@@ -25,11 +25,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // network credentials
 
-const char* ssid = "Redmi";
-const char* password = "Nicola123";
+const char* ssid = "Linkem2.4GHz_5805CB";
+const char* password = "kisebr07";
+
+//const char* ssid = "Redmi";
+//const char* password = "Nicola123";
 
 // MQTT
-const char* mqttServer = "192.168.108.248";
+const char* mqttServer = "192.168.1.71";
+//const char* mqttServer = "192.168.138.248";
+
 const int mqttPort = 1883;
 const char* mqttUser = "nico";
 const char* mqttPassword = "psw";
@@ -197,12 +202,16 @@ void setup(){
 
 void loop(){
 
+  if (WiFi.status() != WL_CONNECTED) {
+    connect_MQTT();   
+  }
+
   client.loop();  //listener for the callback
   
   float t = readDHTTemperature();
   float h = readDHTHumidity();
   long strength = WiFi.RSSI();
-
+  
   Serial.println("----");
   Serial.println("Temperature: " + String(t));
   Serial.println("Humidity: " + String(h));
