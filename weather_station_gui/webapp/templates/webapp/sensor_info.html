@@ -1,29 +1,113 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="../../static/webapp/style.css" />
+
+  <!-- Load plotly.js into the DOM -->
+  <script src='https://cdn.plot.ly/plotly-2.4.2.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+  <script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
 
 </head>
+
 <body>
 
-<div class="topnav">
-  <a class="active" href="#home">Home</a>
-  <a href="#news">News</a>
-  <a href="#contact">Contact</a>
-  <a href="#about">About</a>
-</div>
+  <div style="display: none" id="jsonData" data-json="{{ jsondata }}"></div>
 
-<div style="padding-left:16px">
-  <h2>Top Navigation Example</h2>
-  <p>Some content..</p>
-</div>
+  <div class="header">
+    <a class="logo" href="{% url 'index' %}">{% load static %}<img src="{% static 'logo.png' %}" id="logo"></a>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-8">
+    <div id="charts_container">
+    <div id='temperature_chart'>
+      <!-- Plotly chart will be drawn inside this DIV -->
+    </div>
+
+    <div id='humidity_chart'>
+      <!-- Plotly chart will be drawn inside this DIV -->
+    </div>
+    </div>
+    </div>
 
 
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <div id="info_container" class="col-sm-4">
+      <h3 id="head_info">Device info</h3>
+
+      <div id="info_static">
+        <h5><strong>ID: </strong><span id="sensor_id">{{list_quanto.0.id}}</span></h5>
+        <h5><strong>GPS: </strong>{{list_quanto.0.gps}}</h5>
+      </div>
+
+      <table id="sensor_table" class="table table-borderless">
+        <tbody>
+          <tr>
+            <th scope="row">MAX TEMP</th>
+            <td id="maxtemp"><span id="maxtempvalue">{{payload.maxtemp}}</span>°C</td>
+            <td id="td_edit_maxtemp"><button class="btn btn-secondary btn-sm" id="edit_maxtemp">Edit <i class='far fa-edit'></i></button></td>
+          </tr>
+          <tr>
+            <th scope="row">MIN TEMP</th>
+            <td id="mintemp"><span id="mintempvalue">{{payload.mintemp}}</span>°C</td>
+            <td id="td_edit_mintemp"><button class="btn btn-secondary btn-sm" id="edit_mintemp">Edit <i class='far fa-edit'></i></button></td>
+          </tr>
+          <tr>
+            <th scope="row">MAX HUM</th>
+            <td id="maxhum"><span id="maxhumvalue">{{payload.maxhum}}</span>%</td>
+            <td id="td_edit_maxhum"><button class="btn btn-secondary btn-sm" id="edit_maxhum">Edit <i class='far fa-edit'></i></button></td>
+          </tr>
+          <tr>
+            <th scope="row">MIN HUM</th>
+            <td id="minhum"><span id="minhumvalue">{{payload.minhum}}</span>%</td>
+            <td id="td_edit_minhum"><button class="btn btn-secondary btn-sm" id="edit_minhum">Edit <i class='far fa-edit'></i></button></td>
+          </tr>
+          <tr>
+            <th scope="row">Sampling</th>
+            <td id="sampling"><span id="samplingvalue">{{payload.freq}}</span>ms</td>
+            <td id="td_edit_sampling"><button disabled class="btn btn-secondary btn-sm" id="edit_sampling">Edit <i class='far fa-edit'></i></button></td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <div id="grafana_div">
+        <label for="link_grafana">Do you want to see more data? </label>
+        <a target=”_blank”
+          href="http://localhost:8080/d/6KG_7FD7z/weather-data?orgId=1&from=now-15m&to=now&var-sensor_list={{list_quanto.0.id}}&refresh=5s">Grafana
+          Dashboard</a>
+
+        <a target=”_blank”
+          href="http://localhost:8080/d/fKbUTROnz/weather-data-with-predictions?orgId=1&from=now-5m&to=now%2B40s&var-sensor_list={{list_quanto.0.id}}&refresh=5s">Grafana
+          Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="footer">
+    <div>Nicola Amoriello & Andrea Policarpi 2021.</div>
+  </div>
+
 </body>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-kQtW33rZJAHjgefvhyyzcGF3C5TFyBQBA13V1RKPf4uH+bwyzQxZ6CmMZHmNBEfJ" crossorigin="anonymous"></script>
+<script src="../../static/webapp/js/index.js"></script>
+<script src='../../static/webapp/js/chart.js'></script>
+</body>
+
 </html>

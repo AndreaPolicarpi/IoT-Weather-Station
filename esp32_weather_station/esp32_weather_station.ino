@@ -33,25 +33,29 @@ const char* password = "kisebr07";
 
 // MQTT
 const char* mqttServer = "192.168.1.71";
-//const char* mqttServer = "192.168.138.248";
+//const char* mqttServer = "192.168.97.248";
 
 const int mqttPort = 1883;
 const char* mqttUser = "nico";
 const char* mqttPassword = "psw";
-const char* humidity_topic = "home/livingroom/humidity";
-const char* temperature_topic = "home/livingroom/temperature";
-const char* gps_topic = "gps";
-const char* id_topic = "id";
-const char* strength_topic = "strength";
-const char* clientID = "client_livingroom"; // MQTT client
+const char* clientID = "ArezzoSensor"; // MQTT client
 
 float MIN_TEMP = 25.0;
 float MAX_TEMP = 35.0;
 float MIN_HUM = 40.0;
 float MAX_HUM = 60.0;
 
-String ID = "ID1";
-String gps_coord = "41 53 25.36 - 12 29 32.70";
+String ID = clientID;
+String gps_coord = "43.467, 11.882";
+
+const char* maxtemp_topic = "ArezzoSensor/max_temp";
+const char* mintemp_topic = "ArezzoSensor/min_temp";
+const char* maxhum_topic = "ArezzoSensor/max_hum";
+const char* minhum_topic = "ArezzoSensor/min_hum";
+const char* freq_topic = "ArezzoSensor/freq";
+const char* check_topic = "ArezzoSensor/check";
+const char* feedback_topic = "ArezzoSensor/feedback";
+
 
 
 //#####################################################################
@@ -65,90 +69,114 @@ PubSubClient client(wifiClient);
 //#####################################################################
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  long startTime=millis();
-  Serial.println("############## SONO DENTRO ##############"); 
+  long startTime = millis();
+  Serial.println("############## SONO DENTRO ##############");
   char buff[length];
   int i;
-  for (i = 0; i<length; i++) 
+  for (i = 0; i < length; i++)
   {
     buff[i] = payload[i];
   }
   buff[i] = '\0';
   const char *p_payload = buff;
-    
-  if ( String(topic) == "min_temp" ) {
+
+
+  if ( String(topic) == check_topic ) {
+    Serial.print("#######IF ESTERNO#######");
+
+    StaticJsonDocument<256> doc2;
+    doc2["maxtemp"] = MAX_TEMP;
+    doc2["mintemp"] = MIN_TEMP;
+    doc2["maxhum"] = MAX_HUM;
+    doc2["minhum"] = MIN_HUM;
+    doc2["freq"] = SAMPLE_FREQ;
+
+    char out[128];
+    int b = serializeJson(doc2, out);
+    Serial.print("changes bytes = ");
+    Serial.println(b, DEC);
+
+    if (client.publish(feedback_topic, out)) {
+      Serial.println("feedback sent!");
+    }
+  }
+
+
+  if ( String(topic) == mintemp_topic ) {
     float got_float = atof(p_payload);
     MIN_TEMP = got_float;
     Serial.print("MIN_TEMP changed: ");
-    Serial.println(MIN_TEMP);   
+    Serial.println(MIN_TEMP);
   }
-  
-  if ( String(topic) == "max_temp" ) {
+
+  if ( String(topic) == maxtemp_topic ) {
     float got_float = atof(p_payload);
     MAX_TEMP = got_float;
     Serial.print("MAX_TEMP changed: ");
-    Serial.println(MAX_TEMP);   
+    Serial.println(MAX_TEMP);
   }
-  
-  if ( String(topic) == "min_hum" ) {
+
+  if ( String(topic) == minhum_topic ) {
     float got_float = atof(p_payload);
     MIN_HUM = got_float;
     Serial.print("MIN_HUM changed: ");
-    Serial.println(MIN_HUM);   
+    Serial.println(MIN_HUM);
   }
-  
-  if ( String(topic) == "max_hum" ) {
+
+  if ( String(topic) == maxhum_topic ) {
     float got_float = atof(p_payload);
     MAX_HUM = got_float;
     Serial.print("MAX_HUM changed: ");
-    Serial.println(MAX_HUM);   
+    Serial.println(MAX_HUM);
   }
 
-  if ( String(topic) == "freq" ) {
+  if ( String(topic) == freq_topic ) {
     int got_int = atoi(p_payload);
     SAMPLE_FREQ = got_int;
     Serial.print("SAMPLE_FREQ changed: ");
-    Serial.println(SAMPLE_FREQ);   
+    Serial.println(SAMPLE_FREQ);
   }
-  long deltaTime=millis() - startTime;
+
+  long deltaTime = millis() - startTime;
   Serial.println("TEMPO DI RICEVIMENTO: ");
   Serial.println(deltaTime);
 }
 
 // Custom function to connect to the MQTT broker via WiFi
-void connect_MQTT(){
+void connect_MQTT() {
   WiFi.begin(ssid, password);
- 
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.println("Connecting to WiFi..");
   }
   Serial.println("Connected to the WiFi network");
- 
+
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
- 
+
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
- 
+
     if (client.connect("ESP32Client", mqttUser, mqttPassword )) {
- 
-      Serial.println("connected");  
- 
+
+      Serial.println("connected");
+
     } else {
- 
+
       Serial.print("failed with state ");
       Serial.print(client.state());
       delay(2000);
- 
+
     }
   }
- 
-  client.subscribe("min_temp");
-  client.subscribe("max_temp");
-  client.subscribe("min_hum");
-  client.subscribe("max_hum");
-  client.subscribe("freq");
+
+  client.subscribe(mintemp_topic);
+  client.subscribe(maxtemp_topic);
+  client.subscribe(minhum_topic);
+  client.subscribe(maxhum_topic);
+  client.subscribe(freq_topic);
+  client.subscribe(check_topic);
 }
 
 //#####################################################################
@@ -162,7 +190,7 @@ float readDHTTemperature() {
   // Read temperature as Fahrenheit (isFahrenheit = true)
   //float t = dht.readTemperature(true);
   // Check if any reads failed and exit early (to try again).
-  if (isnan(t)) {    
+  if (isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
     return 0.0;
   }
@@ -188,9 +216,9 @@ float readDHTHumidity() {
 //#######################################################################################
 
 
-void setup(){
+void setup() {
 
-  pinMode(ledPin, OUTPUT);   
+  pinMode(ledPin, OUTPUT);
 
   // Serial port for debugging purposes
   Serial.begin(115200);
@@ -200,81 +228,52 @@ void setup(){
   connect_MQTT();
 }
 
-void loop(){
+void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
-    connect_MQTT();   
+    connect_MQTT();
   }
 
   client.loop();  //listener for the callback
-  
+
   float t = readDHTTemperature();
   float h = readDHTHumidity();
   long strength = WiFi.RSSI();
-  
+
   Serial.println("----");
   Serial.println("Temperature: " + String(t));
   Serial.println("Humidity: " + String(h));
   Serial.println("Strength signal: " + String(strength));
   Serial.println("----");
 
-    Serial.print("MIN_TEMP ATTUALE: ");
-    Serial.println(MIN_TEMP); 
-    Serial.print("MAX_TEMP ATTUALE: ");
-    Serial.println(MAX_TEMP);
-    Serial.print("MIN_HUM ATTUALE: ");
-    Serial.println(MIN_HUM); 
-    Serial.print("MAX_HUM ATTUALE: ");
-    Serial.println(MAX_HUM);
-    Serial.print("SAMPLE_FREQ ATTUALE: ");
-    Serial.println(SAMPLE_FREQ);
+  Serial.print("MIN_TEMP ATTUALE: ");
+  Serial.println(MIN_TEMP);
+  Serial.print("MAX_TEMP ATTUALE: ");
+  Serial.println(MAX_TEMP);
+  Serial.print("MIN_HUM ATTUALE: ");
+  Serial.println(MIN_HUM);
+  Serial.print("MAX_HUM ATTUALE: ");
+  Serial.println(MAX_HUM);
+  Serial.print("SAMPLE_FREQ ATTUALE: ");
+  Serial.println(SAMPLE_FREQ);
 
-  if ( t < MIN_TEMP || t > MAX_TEMP || h < MIN_HUM || h > MAX_HUM ){
-    if ( t < MIN_TEMP || t > MAX_TEMP){
+  if ( t < MIN_TEMP || t > MAX_TEMP || h < MIN_HUM || h > MAX_HUM ) {
+    if ( t < MIN_TEMP || t > MAX_TEMP) {
       digitalWrite(ledPin, HIGH);
       Serial.println("----EXCEPTION MAX/MIN TEMPERATURE----");
     }
-    if ( h < MIN_HUM || h > MAX_HUM ){
+    if ( h < MIN_HUM || h > MAX_HUM ) {
       digitalWrite(ledPin, HIGH);
       Serial.println("----EXCEPTION MAX/MIN HUMIDITY----");
     }
   } else {
-      digitalWrite(ledPin, LOW);
-      Serial.println("---- NO EXCEPTION MAX/MIN----");
+    digitalWrite(ledPin, LOW);
+    Serial.println("---- NO EXCEPTION MAX/MIN----");
   }
 
   // MQTT can only transmit strings
-  String hs="Hum: "+String((float)h)+" % ";
-  String ts="Temp: "+String((float)t)+" C ";
-
-  
-  
-//   // PUBLISH to the MQTT Broker (topic = Temperature, defined at the beginning)
-//  if (client.publish(temperature_topic, String(t).c_str())) {
-//    Serial.println("Temperature sent!");
-//  }
-//
-//
-//  // PUBLISH to the MQTT Broker (topic = Humidity, defined at the beginning)
-//  if (client.publish(humidity_topic, String(h).c_str())) {
-//    Serial.println("Humidity sent!");
-//  }
-//
-//  // PUBLISH to the MQTT Broker (topic = gps, defined at the beginning)
-//  if (client.publish(gps_topic, gps_coord.c_str())) {
-//    Serial.println("GPS Coordinate sent!");
-//  }
-//
-//  
-//  // PUBLISH to the MQTT Broker (topic = id, defined at the beginning)
-//  if (client.publish(id_topic, ID.c_str())) {
-//    Serial.println("ID sent!");
-//  }
-//
-//  // PUBLISH to the MQTT Broker (topic = strength, defined at the beginning)
-//  if (client.publish(strength_topic, String(strength).c_str())) {
-//    Serial.println("Strength sent!");
-//  }
+  String hs = "Hum: " + String((float)h) + " % ";
+  String ts = "Temp: " + String((float)t) + " C ";
 
   StaticJsonDocument<256> doc;
   doc["gps"] = gps_coord;
@@ -284,15 +283,15 @@ void loop(){
   doc["humidity"] = h;
 
   char out[128];
-  int b =serializeJson(doc, out);
+  int b = serializeJson(doc, out);
   Serial.print("bytes = ");
-  Serial.println(b,DEC);
-  
+  Serial.println(b, DEC);
+
   if (client.publish("quanto", out)) {
-   Serial.println("data sent!");
+    Serial.println("data sent!");
   }
 
-   // client.disconnect();  // disconnect from the MQTT broker
+  // client.disconnect();  // disconnect from the MQTT broker
 
   Serial.println("------------------------------------------------------------------------");
   delay(SAMPLE_FREQ);

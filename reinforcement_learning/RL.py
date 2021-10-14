@@ -3,9 +3,12 @@ import numpy as np
 import random
 import ast
 from time import sleep
+import datetime as dt
 
 from influxdb import InfluxDBClient
 import paho.mqtt.client as mqtt
+
+import csv 
 
 file_name = "data/data.csv"
 df = pd.read_csv(file_name, encoding='UTF-16 LE')
@@ -13,14 +16,18 @@ df['index'] = df.index
 print("Number of rows and columns:", df.shape)
 
 INFLUXDB_ADDRESS = "192.168.1.71"
+#INFLUXDB_ADDRESS = "192.168.97.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
 MQTT_ADDRESS = "192.168.1.71"
+#MQTT_ADDRESS = "192.168.97.248"
 MQTT_USER = 'nico'
 MQTT_PASSWORD = 'psw'
 MQTT_CLIENT_ID = "client"
+
+sensor_id = "ArezzoSensor"
 
 INIT_FREQ = 1000
 
@@ -157,7 +164,10 @@ Qtable = pd.DataFrame(data=0, index=states, columns=actions)
 
 state = '[0,{}]'.format(INIT_FREQ)
 
-EPOCHS = 10000
+EPOCHS = 500
+lr = 0.7
+disc_fact = 0.3
+
 
 for i in range(EPOCHS):
 
@@ -187,13 +197,25 @@ for i in range(EPOCHS):
 
     new_state = state_transition(state, chosen_action)
 
-    Qtable.loc[state, chosen_action] = update_prev_Qtable_cell(Qtable, state, chosen_action)
+    Qtable.loc[state, chosen_action] = update_prev_Qtable_cell(Qtable, state, chosen_action, learning_rate=lr, discount_factor= disc_fact)
 
     state = new_state
 
     print("TRAINING PHASE [{}/{}]: ".format(i, EPOCHS), state)
-    mqtt_client.publish("freq", ast.literal_eval(state)[1])
+    mqtt_client.publish(sensor_id+"/freq", ast.literal_eval(state)[1])
     sleep(ast.literal_eval(state)[1]/1000)
+
+
+counter_250ms = 0
+counter_500ms = 0
+counter_1000ms = 0
+
+counter_state_zero = 0
+
+DONE = False
+
+start_time = dt.datetime.now()
+OBSERVATION_TIME = dt.timedelta(minutes=10)
 
 while(True):
 
@@ -223,6 +245,33 @@ while(True):
 
     state = state_transition(state, chosen_action)
 
+    if ast.literal_eval(state)[1] == 250:
+      counter_250ms += 1
+    if ast.literal_eval(state)[1] == 500:
+      counter_500ms += 1
+    if ast.literal_eval(state)[1] == 1000:
+      counter_1000ms += 1
+
+    if ast.literal_eval(state)[0] == 0:
+      counter_state_zero += 1
+
+    if (dt.datetime.now() - start_time) > OBSERVATION_TIME and DONE == False:
+
+      saved_tr = (counter_250ms*4 + counter_500ms*2 + counter_1000ms)/(OBSERVATION_TIME.total_seconds())*4
+
+      total_state_counter = counter_250ms + counter_500ms + counter_1000ms
+      degradation = counter_state_zero / total_state_counter
+
+      data = [saved_tr, degradation, lr, disc_fact, OBSERVATION_TIME]
+      with open('RL_evaluations.csv', 'a', encoding='UTF8') as f:
+        writer = csv.writer(f)
+
+        # write the data
+        writer.writerow(data)
+        
+      done = True
+      
+
     print("RUNNING STATE: ", state)
-    mqtt_client.publish("freq", ast.literal_eval(state)[1])
+    mqtt_client.publish(sensor_id+"/freq", ast.literal_eval(state)[1])
     sleep(ast.literal_eval(state)[1]/1000)

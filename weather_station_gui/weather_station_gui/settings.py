@@ -12,6 +12,19 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 
+INFLUXDB_ADDRESS = "192.168.1.71"
+#INFLUXDB_ADDRESS = "192.168.97.248"
+INFLUXDB_PORT = 8086
+INFLUXDB_USERNAME = 'mqtt'
+INFLUXDB_PASSWORD = 'mqtt'
+INFLUXDB_DATABASE = 'weather_stations'
+
+MQTT_ADDRESS = "192.168.1.71"
+#MQTT_ADDRESS = "192.168.97.248"
+MQTT_USER = 'nico'
+MQTT_PASSWORD = 'psw'
+MQTT_CLIENT_ID = 'admin'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,6 +44,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'webapp.apps.WebappConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

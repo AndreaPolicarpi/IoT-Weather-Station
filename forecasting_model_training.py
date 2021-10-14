@@ -31,6 +31,8 @@ SCALER = True
 
 #MODEL TEMPERATURE
 
+df = df.replace(to_replace=0, method='ffill')
+
 training_set_temp = df.iloc[:TRAINING_SIZE, 6:7].values
 test_set_temp = df.iloc[TRAINING_SIZE:TRAINING_SIZE+TEST_SIZE, 6:7].values
 
@@ -216,7 +218,7 @@ print("#################################")
 
 # Visualising the results
 plt.figure(figsize=(12,4))
-plt.plot(dataset_test_temp.values[29:], color = "red", label = "Real weather")
+plt.plot(dataset_test_temp.values[89:], color = "red", label = "Real weather")
 plt.plot(predicted_temp[:,29], color = "blue", label = "Predicted weather")
 plt.xticks(np.arange(0,len(test_set_temp),100))
 plt.title('Weather Prediction')
@@ -227,7 +229,7 @@ plt.show()
 
 # Visualising the results
 plt.figure(figsize=(12,4))
-plt.plot(dataset_test_hum.values[29:], color = "red", label = "Real weather")
+plt.plot(dataset_test_hum.values[89:], color = "red", label = "Real weather")
 plt.plot(predicted_hum[:,29], color = "blue", label = "Predicted weather")
 plt.xticks(np.arange(0,len(test_set_hum),100))
 plt.title('Weather Prediction')

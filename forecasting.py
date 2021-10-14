@@ -24,13 +24,14 @@ import time
 from pickle import load 
 
 INFLUXDB_ADDRESS = "192.168.1.71"
+#INFLUXDB_ADDRESS = "192.168.97.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
 FORECASTING_WINDOW = 30
 
-ID_SENSOR = 'ID1'
+ID_SENSOR = 'ArezzoSensor'
 
 influxdb_client = InfluxDBClient(
     INFLUXDB_ADDRESS, 8086, INFLUXDB_USER, INFLUXDB_PASSWORD, None)
@@ -116,6 +117,7 @@ while True:
 
     sc_t =  load(open("res/scaler_t.pkl", "rb"))
     sc_h =  load(open("res/scaler_h.pkl", "rb"))
+
     scaled_temp = sc_t.fit_transform(df.iloc[:60, 1:2].values)
     scaled_hum = sc_h.fit_transform(df.iloc[:60, 2:3].values)
 
