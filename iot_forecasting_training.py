@@ -29,11 +29,11 @@ from pickle import dump
 
 """# Setup"""
 
-file_name = "data/data.csv"
+file_name = "data/data14.csv"
 df = pd.read_csv(file_name, encoding='UTF-16 LE')
 df['index'] = df.index
 print("Number of rows and columns:", df.shape)
-TRAINING_SIZE = 20000
+TRAINING_SIZE = 50000
 TEST_SIZE = df.shape[0] - TRAINING_SIZE
 
 FORECASTING_WINDOW = 30
@@ -42,6 +42,7 @@ PAST_WINDOW = 60
 SCALER = True
 
 df = df.replace(to_replace=0, method='ffill')  # fill internal NaN with previous non-NaN value
+df.fillna(method='ffill', inplace=True)
 
 """# Temperature forecasting"""
 

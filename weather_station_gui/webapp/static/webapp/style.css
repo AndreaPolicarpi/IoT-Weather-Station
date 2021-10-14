@@ -140,3 +140,11 @@ ul{
 #head_info {
   padding: 20px 0;
 }
+
+#missingdiv {
+  text-align: center;
+  padding: 50px 0;
+}
+#reload_div {
+  padding-bottom: 25px 0;
+}

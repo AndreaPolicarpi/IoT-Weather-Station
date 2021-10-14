@@ -15,14 +15,14 @@ df = pd.read_csv(file_name, encoding='UTF-16 LE')
 df['index'] = df.index
 print("Number of rows and columns:", df.shape)
 
-INFLUXDB_ADDRESS = "192.168.1.71"
-#INFLUXDB_ADDRESS = "192.168.97.248"
+#INFLUXDB_ADDRESS = "192.168.1.71"
+INFLUXDB_ADDRESS = "192.168.200.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
-MQTT_ADDRESS = "192.168.1.71"
-#MQTT_ADDRESS = "192.168.97.248"
+#MQTT_ADDRESS = "192.168.1.71"
+MQTT_ADDRESS = "192.168.200.248"
 MQTT_USER = 'nico'
 MQTT_PASSWORD = 'psw'
 MQTT_CLIENT_ID = "client"
@@ -165,8 +165,9 @@ Qtable = pd.DataFrame(data=0, index=states, columns=actions)
 state = '[0,{}]'.format(INIT_FREQ)
 
 EPOCHS = 500
-lr = 0.7
+lr = 0.9
 disc_fact = 0.3
+OBSERVATION_TIME = dt.timedelta(minutes=5)
 
 
 for i in range(EPOCHS):
@@ -215,11 +216,11 @@ counter_state_zero = 0
 DONE = False
 
 start_time = dt.datetime.now()
-OBSERVATION_TIME = dt.timedelta(minutes=10)
+
 
 while(True):
 
-    values = influxdb_client.query("SELECT time, id, temperature, humidity FROM quanto ORDER BY desc LIMIT 2")
+    values = influxdb_client.query("SELECT time, id, temperature, humidity FROM quanto WHERE id = \'{}\' ORDER BY desc LIMIT 2".format(sensor_id))
 
     list_values = []
 
@@ -257,7 +258,7 @@ while(True):
 
     if (dt.datetime.now() - start_time) > OBSERVATION_TIME and DONE == False:
 
-      saved_tr = (counter_250ms*4 + counter_500ms*2 + counter_1000ms)/(OBSERVATION_TIME.total_seconds())*4
+      saved_tr = (counter_250ms*4 + counter_500ms*2 + counter_1000ms)/(OBSERVATION_TIME.total_seconds()*4)
 
       total_state_counter = counter_250ms + counter_500ms + counter_1000ms
       degradation = counter_state_zero / total_state_counter
@@ -269,7 +270,7 @@ while(True):
         # write the data
         writer.writerow(data)
         
-      done = True
+      DONE = True
       
 
     print("RUNNING STATE: ", state)

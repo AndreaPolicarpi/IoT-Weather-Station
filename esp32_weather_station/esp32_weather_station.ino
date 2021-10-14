@@ -25,15 +25,15 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // network credentials
 
-const char* ssid = "Linkem2.4GHz_5805CB";
-const char* password = "kisebr07";
+//const char* ssid = "Linkem2.4GHz_5805CB";
+//const char* password = "kisebr07";
 
-//const char* ssid = "Redmi";
-//const char* password = "Nicola123";
+const char* ssid = "Redmi";
+const char* password = "Nicola123";
 
 // MQTT
-const char* mqttServer = "192.168.1.71";
-//const char* mqttServer = "192.168.97.248";
+//const char* mqttServer = "192.168.1.71";
+const char* mqttServer = "192.168.200.248";
 
 const int mqttPort = 1883;
 const char* mqttUser = "nico";

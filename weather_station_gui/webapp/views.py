@@ -55,23 +55,17 @@ def sensor_info(request, sensor_id):
         list_quanto.append(point)
 
 
-    #mqtt_client.loop_start() #start loop to process received messages
+    mqtt_client.loop_start() #start loop to process received messages
     print("subscribing ")
-    #mqtt_client.subscribe()#subscribe
-    #time.sleep(2)
+    mqtt_client.subscribe(sensor_id+"/feedback")#subscribe
+    time.sleep(2)
     print("publishing ")
     mqtt_client.publish(sensor_id+"/check", "nodata")
-    #time.sleep(5)
-
-
-
-    msg = subscribe.simple(sensor_id+"/feedback", keepalive=5, hostname=settings.MQTT_ADDRESS, auth = {'username':"nico", 'password':"psw"})
-    print("%s %s" % (msg.topic, msg.payload))
+    time.sleep(4)
     mqtt_client.disconnect() #disconnect
-    #mqtt_client.loop_stop() #stop loop
+    mqtt_client.loop_stop() #stop loop
 
-    #payload = utils.myGlobalMessagePayload
-    payload = json.loads(msg.payload)
+    payload = utils.myGlobalMessagePayload
     utils.myGlobalMessagePayload = "Sensor not avaible"
 
     if payload == "Sensor not avaible":

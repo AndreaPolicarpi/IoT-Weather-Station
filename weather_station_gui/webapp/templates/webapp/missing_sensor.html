@@ -30,18 +30,33 @@
   <div class="container mt-3">
     <h2></h2>
     <div class="mt-4 p-5 bg-primary text-white rounded">
-      <h1></h1> 
-      <p>The sensor ID: "{{sensor_id}}" is currently unavailable, the sensor is currently unavailable, but if you like you can take a look at the previously sampled data</p> 
-          <a target=”_blank”
-      href="http://localhost:8080/d/fKbUTROnz/weather-data-with-predictions?orgId=1&from=now-5m&to=now%2B40s&var-sensor_list={{sensor_id}}&refresh=5s">Grafana
-      Dashboard</a>
+      <h1>OOPS! Something went wrong... </h1>
+      <p>The sensor ID: "{{sensor_id}}" is currently unavailable, the sensor is currently unavailable, but if you like
+        you can take a look at the previously sampled data</p>
     </div>
   </div>
-
+  <div id="missingdiv">
+    <div id="reload_div">
+      <div>
+        <label for="link_reload">Try to reload the page</label>
+      </div>
+      <div><a
+          href="/webapp/missingsensor/{{sensor_id}}">
+          {{sensor_id}}</a>
+      </div>
     </div>
+      <div>
+        <div>
+          <label for="link_grafana">Do you want to see more data? </label>
+        </div>
+        <div><a target=”_blank”
+            href="http://localhost:8080/d/fKbUTROnz/weather-data-with-predictions?orgId=1&from=now-5m&to=now%2B40s&var-sensor_list={{sensor_id}}&refresh=5s">Grafana
+            Weather Data with predictions Dashboard</a>
+        </div>
+      </div>
   </div>
 
-    <div class="footer">
+  <div class="footer">
     <div>Nicola Amoriello & Andrea Policarpi 2021.</div>
   </div>
 
