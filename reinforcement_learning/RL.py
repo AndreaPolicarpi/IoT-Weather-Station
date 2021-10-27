@@ -16,18 +16,18 @@ df['index'] = df.index
 print("Number of rows and columns:", df.shape)
 
 #INFLUXDB_ADDRESS = "192.168.1.71"
-INFLUXDB_ADDRESS = "192.168.200.248"
+INFLUXDB_ADDRESS = "192.168.180.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
 #MQTT_ADDRESS = "192.168.1.71"
-MQTT_ADDRESS = "192.168.200.248"
+MQTT_ADDRESS = "192.168.180.248"
 MQTT_USER = 'nico'
 MQTT_PASSWORD = 'psw'
 MQTT_CLIENT_ID = "client"
 
-sensor_id = "ArezzoSensor"
+sensor_id = "BolognaSensor"
 
 INIT_FREQ = 1000
 

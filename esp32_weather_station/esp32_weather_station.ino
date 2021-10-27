@@ -25,20 +25,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // network credentials
 
-//const char* ssid = "Linkem2.4GHz_5805CB";
-//const char* password = "kisebr07";
-
 const char* ssid = "Redmi";
 const char* password = "Nicola123";
 
 // MQTT
-//const char* mqttServer = "192.168.1.71";
-const char* mqttServer = "192.168.200.248";
+const char* mqttServer = "192.168.180.248";
 
 const int mqttPort = 1883;
 const char* mqttUser = "nico";
 const char* mqttPassword = "psw";
-const char* clientID = "ArezzoSensor"; // MQTT client
+const char* clientID = "BolognaSensor"; // MQTT client
 
 float MIN_TEMP = 25.0;
 float MAX_TEMP = 35.0;
@@ -46,15 +42,15 @@ float MIN_HUM = 40.0;
 float MAX_HUM = 60.0;
 
 String ID = clientID;
-String gps_coord = "43.467, 11.882";
+String gps_coord = "44.500, 11.344";
 
-const char* maxtemp_topic = "ArezzoSensor/max_temp";
-const char* mintemp_topic = "ArezzoSensor/min_temp";
-const char* maxhum_topic = "ArezzoSensor/max_hum";
-const char* minhum_topic = "ArezzoSensor/min_hum";
-const char* freq_topic = "ArezzoSensor/freq";
-const char* check_topic = "ArezzoSensor/check";
-const char* feedback_topic = "ArezzoSensor/feedback";
+const char* maxtemp_topic = "BolognaSensor/max_temp";
+const char* mintemp_topic = "BolognaSensor/min_temp";
+const char* maxhum_topic = "BolognaSensor/max_hum";
+const char* minhum_topic = "BolognaSensor/min_hum";
+const char* freq_topic = "BolognaSensor/freq";
+const char* check_topic = "BolognaSensor/check";
+const char* feedback_topic = "BolognaSensor/feedback";
 
 
 

@@ -24,14 +24,14 @@ import time
 from pickle import load 
 
 #INFLUXDB_ADDRESS = "192.168.1.71"
-INFLUXDB_ADDRESS = "192.168.200.248"
+INFLUXDB_ADDRESS = "192.168.180.248"
 INFLUXDB_USER = 'mqtt'
 INFLUXDB_PASSWORD = 'mqtt'
 INFLUXDB_DATABASE = 'weather_stations'
 
 FORECASTING_WINDOW = 30
 
-ID_SENSOR = 'ArezzoSensor'
+ID_SENSOR = 'BolognaSensor'
 
 influxdb_client = InfluxDBClient(
     INFLUXDB_ADDRESS, 8086, INFLUXDB_USER, INFLUXDB_PASSWORD, None)
